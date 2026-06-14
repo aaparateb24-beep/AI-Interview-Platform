@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Interview from "./pages/Interview";
 import Review from "./pages/Review";
+import History from "./pages/History";
 
 function App() {
   return (
@@ -16,6 +17,10 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/interview" element={<Interview />} />
         <Route path="/review" element={<Review />} />
+        <Route
+  path="/history"
+  element={<History />}
+/>
       </Routes>
     </BrowserRouter>
   );

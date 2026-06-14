@@ -1,6 +1,17 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 function Home() {
+  const navigate = useNavigate();
+
+  const startInterview = (type) => {
+    localStorage.setItem(
+      "interviewType",
+      type
+    );
+
+    navigate("/interview");
+  };
+
   return (
     <div className="container">
       <div className="card">
@@ -13,9 +24,35 @@ function Home() {
           with AI-powered feedback.
         </p>
 
-        <Link to="/interview">
-          <button>Start Interview</button>
-        </Link>
+        <button
+          onClick={() =>
+            startInterview("Technical")
+          }
+        >
+          Technical Interview
+        </button>
+
+        <br />
+        <br />
+
+        <button
+          onClick={() =>
+            startInterview("HR")
+          }
+        >
+          HR Interview
+        </button>
+
+        <br />
+        <br />
+
+        <button
+          onClick={() =>
+            startInterview("Aptitude")
+          }
+        >
+          Aptitude Interview
+        </button>
       </div>
     </div>
   );

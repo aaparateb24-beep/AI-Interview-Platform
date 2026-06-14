@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -6,29 +6,17 @@ function Interview() {
   const navigate = useNavigate();
 
   const interviewType =
-    localStorage.getItem("interviewType");
+    localStorage.getItem("interviewType") ||
+    "Technical";
 
-  let questions = [];
+  const [questions, setQuestions] =
+    useState([]);
 
-  if (interviewType === "HR") {
-    questions = [
-      "Tell me about yourself",
-      "What are your strengths?",
-      "Where do you see yourself in 5 years?"
-    ];
-  } else if (interviewType === "Technical") {
-    questions = [
-      "What is React?",
-      "What is useState?",
-      "What is useEffect?"
-    ];
-  } else if (interviewType === "Aptitude") {
-    questions = [
-      "What is 20% of 500?",
-      "Find the next number: 2,4,8,16",
-      "A train travels 60 km in 1 hour..."
-    ];
-  }
+  const [loadingQuestions, setLoadingQuestions] =
+    useState(true);
+
+  const [loadingReport, setLoadingReport] =
+    useState(false);
 
   const [currentQuestion, setCurrentQuestion] =
     useState(0);
@@ -36,7 +24,41 @@ function Interview() {
   const [answers, setAnswers] =
     useState(["", "", ""]);
 
+  useEffect(() => {
+
+    const fetchQuestions = async () => {
+
+      try {
+
+        const response =
+          await axios.post(
+            "http://127.0.0.1:8000/generate-questions",
+            {
+              interviewType,
+            }
+          );
+
+        setQuestions(
+          response.data.questions
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+      } finally {
+
+        setLoadingQuestions(false);
+
+      }
+    };
+
+    fetchQuestions();
+
+  }, []);
+
   const handleAnswerChange = (e) => {
+
     const updatedAnswers = [...answers];
 
     updatedAnswers[currentQuestion] =
@@ -46,6 +68,7 @@ function Interview() {
   };
 
   const nextQuestion = () => {
+
     if (
       currentQuestion <
       questions.length - 1
@@ -57,40 +80,98 @@ function Interview() {
   };
 
   const finishInterview = async () => {
+
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/submit",
-        {
-          interviewType,
-          answers,
-        }
+
+      setLoadingReport(true);
+
+      const response =
+        await axios.post(
+          "http://127.0.0.1:8000/submit",
+          {
+            interviewType,
+            questions,
+            answers,
+          }
+        );
+
+      localStorage.setItem(
+        "report",
+        JSON.stringify(response.data)
       );
 
       localStorage.setItem(
-        "backendScore",
-        response.data.score
+        "answers",
+        JSON.stringify(answers)
       );
 
-      localStorage.setItem(
-        "backendFeedback",
-        response.data.feedback
-      );
+      navigate("/review");
 
     } catch (error) {
+
       console.log(error);
+
+      setLoadingReport(false);
+
+      alert(
+        "Unable to connect to the server."
+      );
     }
-
-    localStorage.setItem(
-      "answers",
-      JSON.stringify(answers)
-    );
-
-    navigate("/review");
   };
 
+  if (loadingQuestions) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "120px",
+          fontFamily: "Arial"
+        }}
+      >
+        <h1>
+          Generating Interview Questions
+        </h1>
+
+        <h3>
+          Preparing your interview...
+        </h3>
+      </div>
+    );
+  }
+
+  if (loadingReport) {
+    return (
+      <div
+        style={{
+          textAlign: "center",
+          marginTop: "120px",
+          fontFamily: "Arial"
+        }}
+      >
+        <h1>
+          Generating Interview Report
+        </h1>
+
+        <h3>
+          Analyzing responses and preparing feedback...
+        </h3>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h1>{interviewType} Interview</h1>
+    <div
+      style={{
+        maxWidth: "900px",
+        margin: "50px auto",
+        textAlign: "center",
+        padding: "20px",
+        fontFamily: "Arial"
+      }}
+    >
+      <h1>
+        {interviewType} Interview
+      </h1>
 
       <h2>
         Question {currentQuestion + 1}
@@ -101,8 +182,8 @@ function Interview() {
       </h3>
 
       <textarea
-        rows="5"
-        cols="50"
+        rows="6"
+        cols="60"
         value={answers[currentQuestion]}
         onChange={handleAnswerChange}
         placeholder="Type your answer..."
@@ -113,11 +194,15 @@ function Interview() {
 
       {currentQuestion <
       questions.length - 1 ? (
-        <button onClick={nextQuestion}>
-          Next
+        <button
+          onClick={nextQuestion}
+        >
+          Next Question
         </button>
       ) : (
-        <button onClick={finishInterview}>
+        <button
+          onClick={finishInterview}
+        >
           Finish Interview
         </button>
       )}
