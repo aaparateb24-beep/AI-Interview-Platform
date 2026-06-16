@@ -5,12 +5,12 @@ import {
   Route,
 } from "react-router-dom";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Interview from "./pages/Interview";
-import Review from "./pages/Review";
-import History from "./pages/History";
+import Home from "./pages/home";
+import Login from "./pages/login";
+import Dashboard from "./pages/dashboard";
+import Interview from "./pages/interview";
+import Review from "./pages/review";
+import History from "./pages/history";
 import ResumeAnalyzer from "./pages/ResumeAnalyzer";
 
 function App() {
