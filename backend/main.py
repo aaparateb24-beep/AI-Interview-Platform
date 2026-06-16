@@ -1,10 +1,14 @@
 import ollama
+from fastapi import UploadFile, File
+from pypdf import PdfReader
+import tempfile
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine, SessionLocal
 from models import Base, Interview
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,6 +28,7 @@ def home():
     return {
         "message": "Backend Connected Successfully"
     }
+
 
 
 @app.post("/submit")
@@ -47,22 +52,33 @@ Answer:
     prompt = f"""
 You are an expert interviewer.
 
-Evaluate each question separately.
+Evaluate each answer.
 
-For every question provide:
+For EVERY question provide:
 
-Question Score: X/10
+Score: X/10
 Comment: ...
 
-After all questions provide:
+After evaluating all questions provide:
 
-Strengths
-Weaknesses
-Areas for Improvement
+Strengths:
+- ...
 
-Finally write:
+Weaknesses:
+- ...
+
+Areas for Improvement:
+- ...
+
+IMPORTANT:
+
+At the very end write exactly:
 
 FINAL_SCORE: <number>
+
+Example:
+
+FINAL_SCORE: 78
 
 Interview Data:
 
@@ -70,7 +86,7 @@ Interview Data:
 """
 
     response = ollama.chat(
-        model="llama3",
+        model="llama3.2",
         messages=[
             {
                 "role": "user",
@@ -81,19 +97,53 @@ Interview Data:
 
     feedback = response["message"]["content"]
 
-    score = 50
+    score = None
+
+    # First try FINAL_SCORE
 
     for line in feedback.split("\n"):
+
         if "FINAL_SCORE:" in line:
+
             try:
+
                 score = int(
                     line.replace(
                         "FINAL_SCORE:",
                         ""
                     ).strip()
                 )
+
             except:
                 pass
+
+    # Fallback:
+    # Calculate score from X/10 ratings
+
+    if score is None:
+
+        import re
+
+        matches = re.findall(
+            r"Score:\s*(\d+)/10",
+            feedback
+        )
+
+        if matches:
+
+            total = sum(
+                int(x)
+                for x in matches
+            )
+
+            score = int(
+                (total / (len(matches) * 10))
+                * 100
+            )
+
+        else:
+
+            score = 50
 
     db = SessionLocal()
 
@@ -112,12 +162,19 @@ Interview Data:
 
     return {
         "answered": len(
-            [a for a in answers if a.strip()]
+            [
+                a
+                for a in answers
+                if a.strip()
+            ]
         ),
         "total": len(answers),
         "score": score,
         "feedback": feedback
     }
+
+
+
 
 
 @app.post("/generate-questions")
@@ -128,10 +185,18 @@ def generate_questions(data: dict):
         "Technical"
     )
 
+    question_count = int(
+        data.get(
+            "questionCount",
+            3
+        )
+    )
+
     prompt = f"""
 You are a senior interviewer.
 
-Generate exactly 3 unique and realistic
+Generate exactly {question_count}
+unique and realistic
 {interview_type} interview questions.
 
 Requirements:
@@ -154,7 +219,7 @@ What is the difference between state and props?
 """
 
     response = ollama.chat(
-        model="llama3",
+        model="llama3.2",
         messages=[
             {
                 "role": "user",
@@ -187,6 +252,11 @@ What is the difference between state and props?
             line.replace("1.", "")
             .replace("2.", "")
             .replace("3.", "")
+            .replace("4.", "")
+            .replace("5.", "")
+            .replace("6.", "")
+            .replace("7.", "")
+            .replace("8.", "")
             .replace("-", "")
             .strip()
         )
@@ -194,18 +264,102 @@ What is the difference between state and props?
         if len(line) > 10:
             questions.append(line)
 
-    if len(questions) < 3:
-        questions = [
+    if len(questions) < question_count:
+
+        fallback_questions = [
             "Explain React reconciliation?",
             "What problem does useMemo solve?",
-            "What is the difference between state and props?"
+            "What is the difference between state and props?",
+            "What is a REST API?",
+            "Explain event delegation in JavaScript?",
+            "What is memoization?",
+            "What is database indexing?",
+            "Explain async and await?"
+        ]
+
+        questions = fallback_questions[
+            :question_count
         ]
 
     return {
-        "questions": questions[:3]
+        "questions":
+            questions[:question_count]
     }
 
 
+@app.post("/analyze-resume")
+async def analyze_resume(
+    resume: UploadFile = File(...)
+):
+
+    try:
+
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".pdf"
+        ) as temp_file:
+
+            temp_file.write(
+                await resume.read()
+            )
+
+            pdf_path = temp_file.name
+
+        reader = PdfReader(pdf_path)
+
+        resume_text = ""
+
+        for page in reader.pages:
+
+            text = page.extract_text()
+
+            if text:
+                resume_text += text + "\n"
+
+        prompt = f"""
+You are an expert technical recruiter.
+
+Analyze this resume and provide:
+
+1. Resume Summary
+
+2. Strengths
+
+3. Weaknesses
+
+4. Missing Skills
+
+5. Interview Preparation Tips
+
+Resume:
+
+{resume_text}
+"""
+
+        response = ollama.chat(
+            model="llama3.2",
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+
+        analysis = response[
+            "message"
+        ]["content"]
+
+        return {
+            "analysis": analysis
+        }
+
+    except Exception as e:
+
+        return {
+            "analysis":
+            f"Error: {str(e)}"
+        }
 @app.get("/history")
 def get_history():
 

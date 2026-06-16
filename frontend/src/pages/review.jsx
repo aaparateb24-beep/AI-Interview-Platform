@@ -1,16 +1,23 @@
+
 import { useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
 
 function Review() {
+
   const navigate = useNavigate();
 
   const answers =
     JSON.parse(
-      localStorage.getItem("answers")
+      localStorage.getItem(
+        "answers"
+      )
     ) || [];
 
   const report =
     JSON.parse(
-      localStorage.getItem("report")
+      localStorage.getItem(
+        "report"
+      )
     ) || {
       answered: 0,
       total: 0,
@@ -20,91 +27,205 @@ function Review() {
 
   const scoreColor =
     report.score >= 80
-      ? "green"
+      ? "#16a34a"
       : report.score >= 50
-      ? "orange"
-      : "red";
+      ? "#f59e0b"
+      : "#dc2626";
+
+  const downloadPDF = () => {
+
+    const pdf = new jsPDF();
+
+    pdf.setFontSize(20);
+
+    pdf.text(
+      "AI Interview Report",
+      20,
+      20
+    );
+
+    pdf.setFontSize(12);
+
+    pdf.text(
+      `Score: ${report.score}%`,
+      20,
+      40
+    );
+
+    pdf.text(
+      `Questions Answered: ${report.answered}/${report.total}`,
+      20,
+      50
+    );
+
+    pdf.text(
+      "AI Feedback:",
+      20,
+      70
+    );
+
+    const feedbackLines =
+      pdf.splitTextToSize(
+        report.feedback,
+        170
+      );
+
+    pdf.text(
+      feedbackLines,
+      20,
+      80
+    );
+
+    let yPosition =
+      100 +
+      feedbackLines.length * 6;
+
+    pdf.text(
+      "Submitted Answers:",
+      20,
+      yPosition
+    );
+
+    yPosition += 10;
+
+    answers.forEach(
+      (
+        answer,
+        index
+      ) => {
+
+        const answerLines =
+          pdf.splitTextToSize(
+            `Answer ${index + 1}: ${answer}`,
+            170
+          );
+
+        pdf.text(
+          answerLines,
+          20,
+          yPosition
+        );
+
+        yPosition +=
+          answerLines.length * 6 +
+          10;
+      }
+    );
+
+    pdf.save(
+      "Interview_Report.pdf"
+    );
+  };
 
   return (
     <div
       style={{
-        maxWidth: "900px",
+        maxWidth: "1000px",
         margin: "40px auto",
-        padding: "20px",
-        fontFamily: "Arial"
+        padding: "20px"
       }}
     >
       <div
+        className="card"
         style={{
           textAlign: "center",
           marginBottom: "30px"
         }}
       >
         <h1>
-          Interview Report
+          AI Assessment Report
         </h1>
 
         <p>
-          Interview Performance Summary
+          Detailed interview analysis
+          and performance evaluation
         </p>
-      </div>
 
-      <div
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "25px",
-          boxShadow:
-            "0px 4px 10px rgba(0,0,0,0.1)"
-        }}
-      >
-        <h2>
-          Questions Answered:
-          {report.answered} / {report.total}
-        </h2>
-
-        <h2
+        <div
           style={{
-            color: scoreColor
+            fontSize: "5rem",
+            fontWeight: "bold",
+            color: scoreColor,
+            marginTop: "20px"
           }}
         >
-          Score: {report.score}%
+          {report.score}%
+        </div>
+
+        <h2>
+          Overall Score
         </h2>
       </div>
 
       <div
         style={{
-          border: "1px solid #ddd",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "25px",
-          boxShadow:
-            "0px 4px 10px rgba(0,0,0,0.1)"
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit,minmax(250px,1fr))",
+          gap: "20px",
+          marginBottom: "30px"
+        }}
+      >
+        <div className="card">
+          <h2>
+            {report.answered}
+          </h2>
+
+          <p>
+            Questions Answered
+          </p>
+        </div>
+
+        <div className="card">
+          <h2>
+            {report.total}
+          </h2>
+
+          <p>
+            Total Questions
+          </p>
+        </div>
+
+        <div className="card">
+          <h2
+            style={{
+              color: scoreColor
+            }}
+          >
+            {report.score}%
+          </h2>
+
+          <p>
+            Performance Score
+          </p>
+        </div>
+      </div>
+
+      <div
+        className="card"
+        style={{
+          marginBottom: "30px"
         }}
       >
         <h2>
-          AI Feedback
+          AI Evaluation
         </h2>
 
-        <p
+        <div
           style={{
-            whiteSpace: "pre-wrap",
+            whiteSpace:
+              "pre-wrap",
             lineHeight: "1.8"
           }}
         >
           {report.feedback}
-        </p>
+        </div>
       </div>
 
       <div
+        className="card"
         style={{
-          border: "1px solid #ddd",
-          borderRadius: "12px",
-          padding: "20px",
-          marginBottom: "25px",
-          boxShadow:
-            "0px 4px 10px rgba(0,0,0,0.1)"
+          marginBottom: "30px"
         }}
       >
         <h2>
@@ -112,13 +233,22 @@ function Review() {
         </h2>
 
         {answers.map(
-          (answer, index) => (
-            <div key={index}>
+          (
+            answer,
+            index
+          ) => (
+            <div
+              key={index}
+            >
               <h3>
-                Answer {index + 1}
+                Question
+                {" "}
+                {index + 1}
               </h3>
 
-              <p>{answer}</p>
+              <p>
+                {answer}
+              </p>
 
               <hr />
             </div>
@@ -135,19 +265,34 @@ function Review() {
           onClick={() =>
             navigate("/")
           }
-          style={{
-            marginRight: "15px"
-          }}
         >
           Home
         </button>
 
         <button
           onClick={() =>
-            navigate("/history")
+            navigate(
+              "/history"
+            )
           }
+          style={{
+            marginLeft:
+              "15px"
+          }}
         >
           History
+        </button>
+
+        <button
+          onClick={
+            downloadPDF
+          }
+          style={{
+            marginLeft:
+              "15px"
+          }}
+        >
+          Download PDF
         </button>
       </div>
     </div>
@@ -155,3 +300,4 @@ function Review() {
 }
 
 export default Review;
+
