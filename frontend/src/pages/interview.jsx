@@ -64,7 +64,7 @@ function Interview() {
 
           const response =
             await axios.post(
-              "http://127.0.0.1:8000/generate-questions",
+              "https://ai-interview-platform-0cd2.onrender.com/generate-questions",
               {
                 interviewType,
                 questionCount,
@@ -160,7 +160,7 @@ function Interview() {
 
         const response =
           await axios.post(
-            "http://127.0.0.1:8000/submit",
+            "https://ai-interview-platform-0cd2.onrender.com/submit",
             {
               interviewType,
               questions,
