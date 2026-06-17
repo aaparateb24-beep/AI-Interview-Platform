@@ -1,4 +1,3 @@
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fcabe83a-7a17-446e-8d2f-37aa3872273d" /># AI Interview Platform
 
 An AI-powered mock interview platform built using React, FastAPI, Groq LLM, and SQLAlchemy.
 
