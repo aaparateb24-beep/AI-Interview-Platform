@@ -1,4 +1,4 @@
-# AI Interview Platform
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fcabe83a-7a17-446e-8d2f-37aa3872273d" /># AI Interview Platform
 
 An AI-powered mock interview platform built using React, FastAPI, Groq LLM, and SQLAlchemy.
 
@@ -48,6 +48,9 @@ An AI-powered mock interview platform built using React, FastAPI, Groq LLM, and 
 <img width="774" height="1600" alt="history" src="https://github.com/user-attachments/assets/c4300354-18b1-4532-87a7-111b4770391e" />
 
 
+Live Demo: https://ai-interview-platform-pearl.vercel.app
+
+Backend API: https://ai-interview-platform-0cd2.onrender.com
 ## Installation
 
 ### Backend
