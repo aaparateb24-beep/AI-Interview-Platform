@@ -10,7 +10,7 @@ function History() {
 
     axios
       .get(
-        "http://127.0.0.1:8000/history"
+        "https://ai-interview-platform-0cd2.onrender.com/history"
       )
       .then((response) => {
         setHistory(response.data);

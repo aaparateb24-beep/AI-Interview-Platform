@@ -29,9 +29,7 @@ function Interview() {
     );
 
   const [loadingQuestions, setLoadingQuestions] =
-    useState(
-      questions.length === 0
-    );
+  useState(true);
 
   const [loadingReport, setLoadingReport] =
     useState(false);
@@ -64,7 +62,7 @@ function Interview() {
 
           const response =
             await axios.post(
-              "http://127.0.0.1:8000/generate-questions",
+              "https://ai-interview-platform-0cd2.onrender.com/generate-questions",
               {
                 interviewType,
                 questionCount,
@@ -81,6 +79,10 @@ function Interview() {
           setQuestions(
             response.data.questions
           );
+          alert(
+  "Questions received: " +
+  response.data.questions.length
+);
 
         } catch (error) {
 
@@ -160,7 +162,7 @@ function Interview() {
 
         const response =
           await axios.post(
-            "http://127.0.0.1:8000/submit",
+            "https://ai-interview-platform-0cd2.onrender.com/submit",
             {
               interviewType,
               questions,
@@ -327,7 +329,27 @@ if (loadingReport) {
 
   );
 }
+if (questions.length === 0) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column"
+      }}
+    >
+      <h2>No questions found</h2>
 
+      <button
+        onClick={() => navigate("/")}
+      >
+        Back to Home
+      </button>
+    </div>
+  );
+}
 
 
   return (
