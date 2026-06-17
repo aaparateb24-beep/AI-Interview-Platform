@@ -1,18 +1,22 @@
-import ollama
-from fastapi import UploadFile, File
-from pypdf import PdfReader
+from groq import Groq
+import os
+import re
 import tempfile
 
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from pypdf import PdfReader
 
 from database import engine, SessionLocal
 from models import Base, Interview
 
-
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +34,6 @@ def home():
     }
 
 
-
 @app.post("/submit")
 def submit_answers(data: dict):
 
@@ -46,7 +49,6 @@ Question {i+1}:
 
 Answer:
 {answers[i]}
-
 """
 
     prompt = f"""
@@ -77,7 +79,6 @@ At the very end write exactly:
 FINAL_SCORE: <number>
 
 Example:
-
 FINAL_SCORE: 78
 
 Interview Data:
@@ -85,8 +86,8 @@ Interview Data:
 {evaluation_text}
 """
 
-    response = ollama.chat(
-        model="llama3.2",
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         messages=[
             {
                 "role": "user",
@@ -95,34 +96,23 @@ Interview Data:
         ]
     )
 
-    feedback = response["message"]["content"]
+    feedback = response.choices[0].message.content
 
     score = None
 
-    # First try FINAL_SCORE
-
     for line in feedback.split("\n"):
-
         if "FINAL_SCORE:" in line:
-
             try:
-
                 score = int(
                     line.replace(
                         "FINAL_SCORE:",
                         ""
                     ).strip()
                 )
-
             except:
                 pass
 
-    # Fallback:
-    # Calculate score from X/10 ratings
-
     if score is None:
-
-        import re
 
         matches = re.findall(
             r"Score:\s*(\d+)/10",
@@ -130,19 +120,13 @@ Interview Data:
         )
 
         if matches:
-
-            total = sum(
-                int(x)
-                for x in matches
-            )
+            total = sum(int(x) for x in matches)
 
             score = int(
                 (total / (len(matches) * 10))
                 * 100
             )
-
         else:
-
             score = 50
 
     db = SessionLocal()
@@ -162,19 +146,12 @@ Interview Data:
 
     return {
         "answered": len(
-            [
-                a
-                for a in answers
-                if a.strip()
-            ]
+            [a for a in answers if a.strip()]
         ),
         "total": len(answers),
         "score": score,
         "feedback": feedback
     }
-
-
-
 
 
 @app.post("/generate-questions")
@@ -210,16 +187,10 @@ Requirements:
 - No numbering
 - No headings
 - No explanations
-
-Example style:
-
-Explain React reconciliation?
-What problem does useMemo solve?
-What is the difference between state and props?
 """
 
-    response = ollama.chat(
-        model="llama3.2",
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
         messages=[
             {
                 "role": "user",
@@ -228,7 +199,7 @@ What is the difference between state and props?
         ]
     )
 
-    content = response["message"]["content"]
+    content = response.choices[0].message.content
 
     questions = []
 
@@ -282,8 +253,7 @@ What is the difference between state and props?
         ]
 
     return {
-        "questions":
-            questions[:question_count]
+        "questions": questions[:question_count]
     }
 
 
@@ -310,7 +280,6 @@ async def analyze_resume(
         resume_text = ""
 
         for page in reader.pages:
-
             text = page.extract_text()
 
             if text:
@@ -336,8 +305,8 @@ Resume:
 {resume_text}
 """
 
-        response = ollama.chat(
-            model="llama3.2",
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             messages=[
                 {
                     "role": "user",
@@ -346,9 +315,7 @@ Resume:
             ]
         )
 
-        analysis = response[
-            "message"
-        ]["content"]
+        analysis = response.choices[0].message.content
 
         return {
             "analysis": analysis
@@ -357,9 +324,10 @@ Resume:
     except Exception as e:
 
         return {
-            "analysis":
-            f"Error: {str(e)}"
+            "analysis": f"Error: {str(e)}"
         }
+
+
 @app.get("/history")
 def get_history():
 
@@ -374,15 +342,11 @@ def get_history():
     for interview in interviews:
         result.append({
             "id": interview.id,
-            "interview_type":
-                interview.interview_type,
-            "score":
-                interview.score,
-            "feedback":
-                interview.feedback
+            "interview_type": interview.interview_type,
+            "score": interview.score,
+            "feedback": interview.feedback
         })
 
     db.close()
 
     return result
-
