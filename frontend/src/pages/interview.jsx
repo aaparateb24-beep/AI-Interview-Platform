@@ -29,9 +29,7 @@ function Interview() {
     );
 
   const [loadingQuestions, setLoadingQuestions] =
-    useState(
-      questions.length === 0
-    );
+  useState(true);
 
   const [loadingReport, setLoadingReport] =
     useState(false);
@@ -81,6 +79,10 @@ function Interview() {
           setQuestions(
             response.data.questions
           );
+          alert(
+  "Questions received: " +
+  response.data.questions.length
+);
 
         } catch (error) {
 
@@ -327,7 +329,27 @@ if (loadingReport) {
 
   );
 }
+if (questions.length === 0) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column"
+      }}
+    >
+      <h2>No questions found</h2>
 
+      <button
+        onClick={() => navigate("/")}
+      >
+        Back to Home
+      </button>
+    </div>
+  );
+}
 
 
   return (
